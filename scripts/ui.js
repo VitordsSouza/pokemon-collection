@@ -1,7 +1,15 @@
-const moedaBRL = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
+const formatadores = Object.fromEntries(
+  ["BRL", "EUR", "USD"].map((moeda) => [
+    moeda,
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: moeda }),
+  ]),
+);
+const moedaBRL = formatadores.BRL;
+
+function formatarData(texto) {
+  const data = new Date(texto);
+  return Number.isNaN(data.getTime()) ? texto : data.toLocaleDateString("pt-BR");
+}
 
 const NOMES_IDIOMAS = { pt: "Português", en: "Inglês" };
 
@@ -19,10 +27,16 @@ function imagemHTML(carta, tamanho) {
   return `<img src="${escaparHTML(url)}" alt="${escaparHTML(carta.nome)}" loading="lazy" />`;
 }
 
+const TEXTOS_COTACAO = {
+  carregando: "Cotando…",
+  erro: "Cotação indisponível",
+  "sem-cotacao": "Sem cotação",
+};
+
 function valorHTML(carta) {
-  return carta.valor != null
-    ? `<p>${moedaBRL.format(carta.valor)}</p>`
-    : `<p class="sem-cotacao">Sem cotação</p>`;
+  if (carta.valor != null) return `<p>${moedaBRL.format(carta.valor)}</p>`;
+  const texto = TEXTOS_COTACAO[carta.cotacao?.estado] ?? TEXTOS_COTACAO["sem-cotacao"];
+  return `<p class="sem-cotacao">${texto}</p>`;
 }
 
 // Junta só o que existe: ["Holo", null, "Rara"] -> "Holo · Rara"
@@ -110,6 +124,46 @@ function cabecalhoModalHTML(carta, ...detalhes) {
     <p>${escaparHTML(juntar(...detalhes, carta.raridade, NOMES_IDIOMAS[carta.idioma]))}</p>`;
 }
 
+// Detalhe do preço: referência, faixa entre as fontes, cada fonte e o câmbio usado.
+function precoModalHTML(cotacao, quantidade = 1) {
+  if (cotacao.estado === "carregando") return `<p>Consultando preços…</p>`;
+  if (cotacao.estado === "erro") return `<p>Cotação indisponível: ${escaparHTML(cotacao.mensagem)}</p>`;
+  if (cotacao.estado === "sem-cotacao") {
+    return `<p>Sem cotação para esta versão no Cardmarket e no TCGplayer.</p>`;
+  }
+
+  const { preco, cambio } = cotacao;
+  const fontes = preco.fontes
+    .map((fonte) => {
+      const original = formatadores[fonte.moeda];
+      const detalhes = juntar(
+        fonte.menor != null && `menor anúncio ${original.format(fonte.menor)}`,
+        fonte.atualizado && `atualizado em ${formatarData(fonte.atualizado)}`,
+      );
+      return `
+        <li>
+          <span>${fonte.nome}</span>
+          <span>${original.format(fonte.valor)} · ${moedaBRL.format(fonte.valorBRL)}</span>
+          ${detalhes ? `<small>${escaparHTML(detalhes)}</small>` : ""}
+        </li>`;
+    })
+    .join("");
+
+  return `
+    <div class="modal-valor">
+      <p>${moedaBRL.format(preco.referencia)}</p>
+      <span>valor de referência por unidade</span>
+    </div>
+    ${quantidade > 1 ? `<p>Total com ${quantidade} cópias: ${moedaBRL.format(preco.referencia * quantidade)}</p>` : ""}
+    ${preco.fontes.length > 1 ? `<p>Varia de ${moedaBRL.format(preco.minimo)} a ${moedaBRL.format(preco.maximo)} entre as fontes.</p>` : ""}
+    <ul class="modal-fontes">${fontes}</ul>
+    <p class="modal-nota">
+      Preços internacionais convertidos para reais (1 € = ${moedaBRL.format(cambio.EUR)} ·
+      1 US$ = ${moedaBRL.format(cambio.USD)}, ${escaparHTML(cambio.fonte)}, ${escaparHTML(formatarData(cambio.data))}).
+      Não há cotação do mercado brasileiro disponível por API.
+    </p>`;
+}
+
 function quantidadeHTML(quantidade) {
   return `
     <div class="modal-quantidade">
@@ -129,7 +183,7 @@ export function fecharModal() {
 }
 
 // Carta vinda da busca: escolher variante e quantidade antes de adicionar.
-export function renderizarModalBusca({ carta, variantes, variante, quantidade, mensagem, carregando }) {
+export function renderizarModalBusca({ carta, variantes, variante, quantidade, mensagem, carregando, cotacao }) {
   const opcoes = carregando
     ? `<option>Carregando variantes…</option>`
     : variantes
@@ -145,6 +199,7 @@ export function renderizarModalBusca({ carta, variantes, variante, quantidade, m
       Variante
       <select data-campo="variante" ${carregando ? "disabled" : ""}>${opcoes}</select>
     </label>
+    ${cotacao ? precoModalHTML(cotacao) : ""}
     ${quantidadeHTML(quantidade)}
     <button class="botao-primario" data-acao="adicionar" ${carregando ? "disabled" : ""}>Adicionar à coleção</button>
     <p class="modal-mensagem" role="status">${escaparHTML(mensagem)}</p>`);
@@ -154,10 +209,11 @@ export function renderizarModalBusca({ carta, variantes, variante, quantidade, m
 export function renderizarModalColecao({ item, confirmandoRemocao, mensagem }) {
   mostrarModal(`
     ${cabecalhoModalHTML(item, item.varianteNome)}
-    <div class="modal-valor">
-      ${valorHTML(item)}
-      <span>por unidade</span>
-    </div>
+    ${
+      item.cotacao
+        ? precoModalHTML(item.cotacao, item.quantidade)
+        : `<div class="modal-valor">${valorHTML(item)}<span>por unidade</span></div>`
+    }
     ${quantidadeHTML(item.quantidade)}
     <button class="botao-remover" data-acao="remover">
       ${confirmandoRemocao ? "Confirmar remoção" : "Remover da coleção"}

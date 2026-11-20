@@ -7,6 +7,7 @@ import {
   combinarResumos,
   combinarSets,
   listarVariantes,
+  entradaDaVariante,
 } from "../scripts/api.js";
 
 const sets = [
@@ -90,4 +91,34 @@ test("listarVariantes usa os indicadores simples quando não há detalhamento", 
     { chave: "reverse", nome: "Reverse" },
   ]);
   assert.deepEqual(listarVariantes(null), []);
+});
+
+test("entradaDaVariante pega a primeira repetida com preço", () => {
+  // Recorte real de base1-4: a variante "holo" aparece repetida, uma delas sem preço.
+  const detalhe = {
+    pricing: { cardmarket: { trend: 1 } },
+    variants_detailed: [
+      { type: "holo", size: "standard" },
+      { type: "holo", size: "standard", pricing: { cardmarket: { trend: 441.68 } } },
+      { type: "holo", size: "standard", stamp: ["1st-edition"], pricing: { cardmarket: { trend: 3489.25 } } },
+    ],
+  };
+  assert.equal(entradaDaVariante(detalhe, "holo").pricing.cardmarket.trend, 441.68);
+  assert.deepEqual(entradaDaVariante(detalhe, "holo-1st-edition").selos, ["1st-edition"]);
+});
+
+test("entradaDaVariante: só a versão comum herda o preço geral da carta", () => {
+  // Recorte real de sm7.5-3: a variante não tem preço próprio, só o geral.
+  const detalhe = {
+    pricing: { tcgplayer: { holofoil: { marketPrice: 12.05 } } },
+    variants: { normal: true },
+    variants_detailed: [
+      { type: "normal", size: "standard" },
+      { type: "reverse", foil: "masterball", size: "standard" },
+    ],
+  };
+  assert.equal(entradaDaVariante(detalhe, "normal").pricing, detalhe.pricing);
+  assert.equal(entradaDaVariante(detalhe, "reverse-masterball"), null);
+  assert.equal(entradaDaVariante(detalhe, "inexistente"), null);
+  assert.equal(entradaDaVariante({ variants: { holo: true }, pricing: { x: 1 } }, "holo").tipo, "holo");
 });

@@ -1,4 +1,4 @@
-import { carregarVariantes, pesquisarCartas } from "./api.js";
+import { buscarCambio, buscarCotacao, carregarVariantes, pesquisarCartas } from "./api.js";
 import { adicionar, alterarQuantidade, obterItens, remover } from "./colecao.js";
 import {
   fecharModal,
@@ -9,13 +9,75 @@ import {
   renderizarResultados,
   renderizarResumo,
 } from "./ui.js";
+import { calcularPreco } from "./precos.js";
 
-function atualizarColecao() {
-  renderizarGrade(obterItens());
-  renderizarResumo(obterItens());
+// ---------- Preços ----------
+
+const cotacoes = new Map(); // id do item -> { estado, preco?, cambio?, mensagem? }
+let cambio = null; // promessa compartilhada: um só pedido de câmbio por abertura da página
+
+function obterCambio() {
+  cambio ??= buscarCambio().catch((erro) => {
+    cambio = null; // permite tentar de novo
+    throw erro;
+  });
+  return cambio;
 }
 
-atualizarColecao();
+async function cotar(cardId, variante) {
+  try {
+    const [valores, cotacao] = await Promise.all([obterCambio(), buscarCotacao(cardId, variante)]);
+    const preco = calcularPreco(cotacao, valores);
+    return preco ? { estado: "ok", preco, cambio: valores } : { estado: "sem-cotacao" };
+  } catch (erro) {
+    console.error(erro);
+    return { estado: "erro", mensagem: erro.message };
+  }
+}
+
+// shortcut: itens do mock não têm cardId e mantêm o valor fictício até a Fase 6.
+function comPreco(item) {
+  if (!item.cardId) return item;
+  const cotacao = cotacoes.get(item.id) ?? { estado: "carregando" };
+  return { ...item, valor: cotacao.preco?.referencia ?? null, cotacao };
+}
+
+function atualizarColecao() {
+  const itens = obterItens().map(comPreco);
+  renderizarGrade(itens);
+  renderizarResumo(itens);
+}
+
+// Vários preços chegam juntos: redesenha uma vez por quadro, não uma vez por carta.
+let desenhoAgendado = false;
+function agendarDesenho() {
+  if (desenhoAgendado) return;
+  desenhoAgendado = true;
+  requestAnimationFrame(() => {
+    desenhoAgendado = false;
+    atualizarColecao();
+    if (modal?.modo === "colecao" && elementoModal.open) desenharModal();
+  });
+}
+
+async function emParalelo(itens, limite, tarefa) {
+  const fila = [...itens];
+  const trabalhador = async () => {
+    while (fila.length) await tarefa(fila.shift());
+  };
+  await Promise.all(Array.from({ length: limite }, trabalhador));
+}
+
+async function cotarColecao() {
+  const pendentes = obterItens().filter((item) => item.cardId && !cotacoes.has(item.id));
+  for (const item of pendentes) cotacoes.set(item.id, { estado: "carregando" });
+
+  // Poucas consultas por vez, para respeitar a base gratuita.
+  await emParalelo(pendentes, 4, async (item) => {
+    cotacoes.set(item.id, await cotar(item.cardId, item.variante));
+    agendarDesenho();
+  });
+}
 
 // ---------- Busca ----------
 
@@ -54,7 +116,7 @@ let modal = null; // estado do modal aberto
 
 function desenharModal() {
   if (modal.modo === "busca") renderizarModalBusca(modal);
-  else renderizarModalColecao(modal);
+  else renderizarModalColecao({ ...modal, item: comPreco(modal.item) });
 }
 
 async function abrirCartaDaBusca(id) {
@@ -77,6 +139,18 @@ async function abrirCartaDaBusca(id) {
   // O usuário pode ter fechado ou aberto outra carta enquanto carregava.
   if (modal !== estado || !elementoModal.open) return;
   Object.assign(estado, { variantes, variante: variantes[0].chave, carregando: false });
+  cotarVarianteDoModal(estado);
+}
+
+async function cotarVarianteDoModal(estado) {
+  const variante = estado.variante;
+  estado.cotacao = { estado: "carregando" };
+  desenharModal();
+
+  const cotacao = await cotar(estado.carta.id, variante);
+  // Ignora a resposta se o usuário trocou de variante ou de carta nesse meio tempo.
+  if (modal !== estado || estado.variante !== variante || !elementoModal.open) return;
+  estado.cotacao = cotacao;
   desenharModal();
 }
 
@@ -113,6 +187,7 @@ function adicionarCartaDoModal() {
   const total = obterItens().find((item) => item.id === id).quantidade;
   modal.mensagem = `Adicionada! Você tem ${total} ${total === 1 ? "cópia" : "cópias"} desta versão.`;
   modal.quantidade = 1;
+  cotarColecao();
 }
 
 function mudarQuantidade(diferenca) {
@@ -168,7 +243,10 @@ elementoModal.addEventListener("click", (evento) => {
 });
 
 elementoModal.addEventListener("change", (evento) => {
-  if (evento.target.dataset.campo === "variante") modal.variante = evento.target.value;
+  if (evento.target.dataset.campo !== "variante") return;
+  modal.variante = evento.target.value;
+  modal.mensagem = "";
+  cotarVarianteDoModal(modal);
 });
 
 document.querySelector(".grid-resultados").addEventListener("click", (evento) => {
@@ -190,3 +268,8 @@ gradeColecao.addEventListener("keydown", (evento) => {
     abrirCartaDaColecao(carta.dataset.id);
   }
 });
+
+// ---------- Início ----------
+
+atualizarColecao();
+cotarColecao();

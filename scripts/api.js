@@ -1,8 +1,15 @@
+import { estaValido, gravarCache, lerCache } from "./cache.js";
+import { extrairCotacao } from "./precos.js";
+
 // Base de cartas: TCGdex (https://tcgdex.dev), gratuita e sem chave de API.
 // Em português ela só tem as cartas lançadas no Brasil; o inglês completa o restante.
 const BASE_TCGDEX = "https://api.tcgdex.net/v2";
 const TEMPO_LIMITE_MS = 10000;
 export const LIMITE_RESULTADOS = 20;
+
+const HORA_MS = 60 * 60 * 1000;
+const VALIDADE_COTACAO_MS = 24 * HORA_MS; // o Cardmarket atualiza uma vez por dia
+const VALIDADE_CAMBIO_MS = 12 * HORA_MS;
 
 const NOMES_VARIANTES = {
   normal: "Normal",
@@ -30,43 +37,121 @@ function variantesSimples(detalhe) {
 // Versões físicas da carta. Cada uma tem preço próprio: um reverse Master Ball vale
 // muito mais que o reverse comum. Tamanho jumbo fica de fora.
 // Usar o detalhe em inglês: em português a API traduz tipo, acabamento e tamanho.
+const ehPadrao = (variante) => (variante.size ?? "standard") === "standard"; // jumbo fica de fora
+const extrasDe = (variante) => [variante.foil, ...(variante.stamp ?? [])].filter(Boolean);
+const chaveDe = (variante) => [variante.type, ...extrasDe(variante)].join("-");
+
 export function listarVariantes(detalhe) {
   const porChave = new Map();
-  for (const variante of detalhe?.variants_detailed ?? []) {
-    if ((variante.size ?? "standard") !== "standard") continue;
+  for (const variante of (detalhe?.variants_detailed ?? []).filter(ehPadrao)) {
+    const chave = chaveDe(variante);
+    if (porChave.has(chave)) continue;
 
-    const extras = [variante.foil, ...(variante.stamp ?? [])].filter(Boolean);
-    const chave = [variante.type, ...extras].join("-");
     const nomeTipo = NOMES_VARIANTES[variante.type] ?? titulo(variante.type);
-    const nomeExtras = extras.map((extra) => NOMES_EXTRAS[extra] ?? titulo(extra)).join(", ");
+    const nomeExtras = extrasDe(variante).map((extra) => NOMES_EXTRAS[extra] ?? titulo(extra)).join(", ");
     porChave.set(chave, { chave, nome: nomeExtras ? `${nomeTipo} (${nomeExtras})` : nomeTipo });
   }
   return porChave.size ? [...porChave.values()] : variantesSimples(detalhe);
 }
 
-export async function carregarVariantes(cardId) {
-  return listarVariantes(await buscarComMemoria(`/en/cards/${encodeURIComponent(cardId)}`));
+// Dados de preço de uma variante. A base às vezes repete a variante; vale a primeira com preço.
+// Só a versão comum pode usar o preço geral da carta: uma versão especial sem preço próprio
+// (Master Ball, selo, 1ª edição…) fica sem cotação, em vez de herdar o valor da comum.
+export function entradaDaVariante(detalhe, chave) {
+  const doTipo = (detalhe?.variants_detailed ?? []).filter((v) => ehPadrao(v) && chaveDe(v) === chave);
+  const comPreco = doTipo.find((v) => v.pricing);
+  if (comPreco) {
+    return { tipo: comPreco.type, foil: comPreco.foil ?? null, selos: comPreco.stamp ?? [], pricing: comPreco.pricing };
+  }
+
+  const comum = doTipo[0] ?? (detalhe?.variants?.[chave] ? { type: chave } : null);
+  if (!comum || extrasDe(comum).length) return null;
+  return { tipo: comum.type, foil: null, selos: [], pricing: detalhe.pricing };
 }
 
-async function buscarJSON(caminho) {
+const caminhoDetalheEn = (cardId) => `/en/cards/${encodeURIComponent(cardId)}`;
+
+export async function carregarVariantes(cardId) {
+  return listarVariantes(await buscarComMemoria(caminhoDetalheEn(cardId)));
+}
+
+// Cotação da variante na moeda de cada mercado, guardada por 24 h.
+export async function buscarCotacao(cardId, chave) {
+  const chaveCache = `cotacao:${cardId}:${chave}`;
+  const salvo = lerCache(chaveCache);
+  if (estaValido(salvo, VALIDADE_COTACAO_MS)) return salvo.valor;
+
+  try {
+    const detalhe = await buscarComMemoria(caminhoDetalheEn(cardId));
+    const cotacao = extrairCotacao(entradaDaVariante(detalhe, chave));
+    gravarCache(chaveCache, cotacao);
+    return cotacao;
+  } catch (erro) {
+    if (salvo) return salvo.valor; // vencida, mas a data da cotação aparece na tela
+    throw erro;
+  }
+}
+
+// ---------- Câmbio (reais por dólar e por euro) ----------
+
+async function cambioAwesomeApi() {
+  const dados = await buscarJSON(
+    "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL",
+    "ao serviço de câmbio",
+  );
+  const usd = Number(dados?.USDBRL?.bid);
+  const eur = Number(dados?.EURBRL?.bid);
+  if (!(usd > 0 && eur > 0)) throw new Error("Resposta de câmbio inválida (AwesomeAPI).");
+  return { USD: usd, EUR: eur, fonte: "AwesomeAPI", data: dados.USDBRL.create_date };
+}
+
+async function cambioFrankfurter() {
+  const dados = await buscarJSON(
+    "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=BRL,USD",
+    "ao serviço de câmbio",
+  );
+  const eur = dados?.rates?.BRL;
+  const usdPorEur = dados?.rates?.USD;
+  if (!(eur > 0 && usdPorEur > 0)) throw new Error("Resposta de câmbio inválida (Frankfurter).");
+  return { USD: eur / usdPorEur, EUR: eur, fonte: "Frankfurter (BCE)", data: dados.date };
+}
+
+export async function buscarCambio() {
+  const salvo = lerCache("cambio");
+  if (estaValido(salvo, VALIDADE_CAMBIO_MS)) return salvo.valor;
+
+  try {
+    const cambio = await cambioAwesomeApi().catch((erro) => {
+      console.warn("AwesomeAPI indisponível; usando Frankfurter.", erro);
+      return cambioFrankfurter();
+    });
+    gravarCache("cambio", cambio);
+    return cambio;
+  } catch (erro) {
+    if (salvo) return salvo.valor; // vencido, mas a data do câmbio aparece na tela
+    throw new Error("Não foi possível obter a cotação do dólar e do euro.", { cause: erro });
+  }
+}
+
+// ---------- Acesso à rede ----------
+
+async function buscarJSON(url, servico = "à base de cartas") {
   let resposta;
   try {
-    resposta = await fetch(BASE_TCGDEX + caminho, {
-      signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
-    });
+    resposta = await fetch(url, { signal: AbortSignal.timeout(TEMPO_LIMITE_MS) });
   } catch (erro) {
     throw new Error(
-      "Não foi possível conectar à base de cartas. Verifique sua internet e tente novamente.",
+      `Não foi possível conectar ${servico}. Verifique sua internet e tente novamente.`,
       { cause: erro },
     );
   }
 
   if (resposta.status === 404) return null;
   if (resposta.status === 429) {
-    throw new Error("Muitas buscas seguidas. Aguarde alguns segundos e tente novamente.");
+    throw new Error("Muitas consultas seguidas. Aguarde alguns segundos e tente novamente.");
   }
   if (!resposta.ok) {
-    throw new Error(`A base de cartas respondeu com erro (${resposta.status}). Tente novamente em instantes.`);
+    throw new Error(`O servidor respondeu com erro (${resposta.status}). Tente novamente em instantes.`);
   }
   return resposta.json();
 }
@@ -75,7 +160,7 @@ async function buscarJSON(caminho) {
 const memoria = new Map();
 function buscarComMemoria(caminho) {
   if (!memoria.has(caminho)) {
-    const promessa = buscarJSON(caminho).catch((erro) => {
+    const promessa = buscarJSON(BASE_TCGDEX + caminho).catch((erro) => {
       memoria.delete(caminho); // erro não fica em memória: a próxima tentativa refaz a consulta
       throw erro;
     });
