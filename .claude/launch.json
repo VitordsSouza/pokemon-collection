@@ -4,7 +4,7 @@
     {
       "name": "pokemon-collection",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5500"],
+      "runtimeArgs": ["servidor.py"],
       "port": 5500
     }
   ]
