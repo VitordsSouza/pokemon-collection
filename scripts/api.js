@@ -12,6 +12,42 @@ const NOMES_VARIANTES = {
   wPromo: "Promo",
 };
 
+const NOMES_EXTRAS = {
+  "1st-edition": "1ª edição",
+  pokeball: "Poké Ball",
+  masterball: "Master Ball",
+};
+
+const titulo = (texto) => texto.replace(/-/g, " ").replace(/\b\w/g, (letra) => letra.toUpperCase());
+
+// Resumo das versões (Normal, Holo, Reverse…) a partir dos indicadores simples da API.
+function variantesSimples(detalhe) {
+  return Object.keys(NOMES_VARIANTES)
+    .filter((chave) => detalhe?.variants?.[chave])
+    .map((chave) => ({ chave, nome: NOMES_VARIANTES[chave] }));
+}
+
+// Versões físicas da carta. Cada uma tem preço próprio: um reverse Master Ball vale
+// muito mais que o reverse comum. Tamanho jumbo fica de fora.
+// Usar o detalhe em inglês: em português a API traduz tipo, acabamento e tamanho.
+export function listarVariantes(detalhe) {
+  const porChave = new Map();
+  for (const variante of detalhe?.variants_detailed ?? []) {
+    if ((variante.size ?? "standard") !== "standard") continue;
+
+    const extras = [variante.foil, ...(variante.stamp ?? [])].filter(Boolean);
+    const chave = [variante.type, ...extras].join("-");
+    const nomeTipo = NOMES_VARIANTES[variante.type] ?? titulo(variante.type);
+    const nomeExtras = extras.map((extra) => NOMES_EXTRAS[extra] ?? titulo(extra)).join(", ");
+    porChave.set(chave, { chave, nome: nomeExtras ? `${nomeTipo} (${nomeExtras})` : nomeTipo });
+  }
+  return porChave.size ? [...porChave.values()] : variantesSimples(detalhe);
+}
+
+export async function carregarVariantes(cardId) {
+  return listarVariantes(await buscarComMemoria(`/en/cards/${encodeURIComponent(cardId)}`));
+}
+
 async function buscarJSON(caminho) {
   let resposta;
   try {
@@ -112,9 +148,7 @@ function montarCarta({ resumo, set }, detalhe) {
     imagem: resumo.image ?? null, // URL base; o tamanho é escolhido na exibição
     idioma: resumo.idioma, // "pt" ou "en": de onde vieram nome, raridade e variantes
     raridade: detalhe?.rarity && detalhe.rarity !== "None" ? detalhe.rarity : null, // a API usa "None" como texto
-    variantes: Object.keys(NOMES_VARIANTES)
-      .filter((chave) => detalhe?.variants?.[chave])
-      .map((chave) => NOMES_VARIANTES[chave]),
+    variantes: variantesSimples(detalhe), // a lista completa vem de carregarVariantes()
   };
 }
 

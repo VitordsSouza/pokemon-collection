@@ -36,7 +36,11 @@ function salvar() {
   try {
     localStorage.setItem(CHAVE, JSON.stringify(itens));
   } catch (erro) {
-    console.error("Não foi possível salvar a coleção.", erro);
+    // A alteração fica só na memória: avisa quem chamou para a tela não dizer que foi salvo.
+    throw new Error(
+      "Não foi possível salvar a coleção neste navegador. A alteração vale só até fechar a página.",
+      { cause: erro },
+    );
   }
 }
 

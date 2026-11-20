@@ -6,6 +6,7 @@ import {
   filtrarEOrdenar,
   combinarResumos,
   combinarSets,
+  listarVariantes,
 } from "../scripts/api.js";
 
 const sets = [
@@ -62,4 +63,31 @@ test("combinarSets segue a ordem em inglês, traduz nomes e remove o Pocket", ()
     new Set(["A1"]),
   );
   assert.deepEqual(resultado.map((s) => s.name), ["Coleção Básica", "Delta"]);
+});
+
+test("listarVariantes remove repetidas e jumbo, e nomeia acabamentos e selos", () => {
+  const detalhe = {
+    variants_detailed: [
+      { type: "holo", size: "standard" },
+      { type: "holo", size: "standard", stamp: ["1st-edition"] },
+      { type: "holo", size: "standard" },
+      { type: "holo", size: "jumbo" },
+      { type: "reverse", size: "standard", foil: "masterball" },
+      { type: "normal", size: "standard", stamp: ["pokemon-together"] },
+    ],
+  };
+  assert.deepEqual(listarVariantes(detalhe), [
+    { chave: "holo", nome: "Holo" },
+    { chave: "holo-1st-edition", nome: "Holo (1ª edição)" },
+    { chave: "reverse-masterball", nome: "Reverse (Master Ball)" },
+    { chave: "normal-pokemon-together", nome: "Normal (Pokemon Together)" },
+  ]);
+});
+
+test("listarVariantes usa os indicadores simples quando não há detalhamento", () => {
+  assert.deepEqual(listarVariantes({ variants: { normal: true, reverse: true, holo: false } }), [
+    { chave: "normal", nome: "Normal" },
+    { chave: "reverse", nome: "Reverse" },
+  ]);
+  assert.deepEqual(listarVariantes(null), []);
 });

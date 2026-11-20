@@ -53,3 +53,16 @@ test("dado corrompido é preservado em cópia, sem quebrar a página", async () 
   assert.deepEqual(colecao.obterItens(), []);
   assert.equal(armazenamento.get("pkm.colecao.v1.corrompido"), "{quebrado");
 });
+
+test("falha ao salvar é avisada a quem chamou", async () => {
+  const colecao = await abrirColecao();
+  const setItemOriginal = localStorage.setItem;
+  localStorage.setItem = () => {
+    throw new Error("QuotaExceededError");
+  };
+  try {
+    assert.throws(() => colecao.adicionar({ id: "z" }), /Não foi possível salvar/);
+  } finally {
+    localStorage.setItem = setItemOriginal;
+  }
+});
