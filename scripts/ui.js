@@ -9,7 +9,7 @@ function escaparHTML(texto) {
 }
 
 export function renderizarGrade(cartas) {
-  document.querySelector(".grid-minha-colecao").innerHTML = cartas
+  document.querySelector(".secao-minha-colecao .grid-minha-colecao").innerHTML = cartas
     .map(
       (carta) => `
         <div class="div-carta">
@@ -22,6 +22,46 @@ export function renderizarGrade(cartas) {
           </div>
         </div>`,
     )
+    .join("");
+}
+
+const secaoResultados = document.querySelector(".secao-resultados-pesquisa");
+
+export function mostrarStatusPesquisa(mensagem) {
+  secaoResultados.hidden = false;
+  secaoResultados.querySelector(".status-pesquisa").textContent = mensagem;
+  secaoResultados.querySelector(".grid-resultados").innerHTML = "";
+}
+
+function cartaResultadoHTML(carta) {
+  const imagem = carta.imagem
+    ? `<img src="${escaparHTML(carta.imagem)}/low.webp" alt="${escaparHTML(carta.nome)}" loading="lazy" />`
+    : `<div class="carta-sem-imagem"><span>Imagem indisponível</span></div>`;
+
+  return `
+    <div class="div-carta">
+      ${imagem}
+      <h4>${escaparHTML(carta.nome)}</h4>
+      <p>${escaparHTML(carta.setNome)}</p>
+      ${carta.variantes.length ? `<p>${escaparHTML(carta.variantes.join(" · "))}</p>` : ""}
+      <div>
+        <span>${escaparHTML(carta.raridade ?? "")}</span>
+        <span>${escaparHTML(carta.numero)}</span>
+      </div>
+    </div>`;
+}
+
+export function renderizarResultados(termo, { total, cartas }) {
+  let mensagem = `Nenhuma carta encontrada para "${termo}".`;
+  if (total === 1) mensagem = "1 carta encontrada.";
+  if (total > 1) mensagem = `${total} cartas encontradas.`;
+  if (total > cartas.length) {
+    mensagem += ` Mostrando as ${cartas.length} mais recentes; refine com o número (ex.: Charizard 4/102).`;
+  }
+
+  mostrarStatusPesquisa(mensagem);
+  secaoResultados.querySelector(".grid-resultados").innerHTML = cartas
+    .map(cartaResultadoHTML)
     .join("");
 }
 

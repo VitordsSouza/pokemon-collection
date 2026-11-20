@@ -1,0 +1,39 @@
+.secao-resultados-pesquisa {
+  padding: 0 20px 20px 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.secao-resultados-pesquisa[hidden] {
+  display: none;
+}
+
+.secao-resultados-pesquisa h3 {
+  font-size: 14px;
+}
+
+.status-pesquisa {
+  color: var(--texto-cinza);
+  font-size: 13px;
+}
+
+.status-pesquisa:empty {
+  display: none;
+}
+
+/* Mesmo tamanho da imagem da carta, para o grid não pular */
+.div-carta .carta-sem-imagem {
+  width: 142px;
+  aspect-ratio: 245 / 342;
+  align-self: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  text-align: center;
+
+  background-color: var(--cor-bg-primario);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+}

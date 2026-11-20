@@ -14,8 +14,18 @@
     </header>
 
     <section class="secao-de-pesquisa">
-      <input type="text" />
+      <input
+        type="text"
+        placeholder="Ex.: Charizard ou Charizard 4/102"
+        aria-label="Buscar carta"
+      />
       <button>Buscar</button>
+    </section>
+
+    <section class="secao-resultados-pesquisa" hidden>
+      <h3>Resultados da busca</h3>
+      <p class="status-pesquisa" role="status"></p>
+      <div class="grid-minha-colecao grid-resultados"></div>
     </section>
 
     <section class="resumo-colecao-secao">
