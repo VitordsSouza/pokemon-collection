@@ -7,6 +7,7 @@ export const minhaColecao = [
     setNome: "151",
     imagem: "img/cartas/decidueye-ex.jpg",
     numero: "128/150",
+    totalSet: 150,
   },
   {
     id: "mock-houndstone",
@@ -16,6 +17,7 @@ export const minhaColecao = [
     setNome: "Equilíbrio perfeito",
     imagem: "img/cartas/houndstone.jpg",
     numero: "15/97",
+    totalSet: 97,
   },
   {
     id: "mock-shedinja",
@@ -25,6 +27,7 @@ export const minhaColecao = [
     setNome: "Caos ascendente",
     imagem: "img/cartas/shedinja.jpg",
     numero: "101/142",
+    totalSet: 142,
   },
   {
     id: "mock-mega-skarmory-ex",
@@ -34,5 +37,6 @@ export const minhaColecao = [
     setNome: "Abismo da escuridão",
     imagem: "img/cartas/mega-skarmory-ex.jpg",
     numero: "201/205",
+    totalSet: 205,
   },
 ];

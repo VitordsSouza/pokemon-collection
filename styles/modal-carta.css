@@ -154,6 +154,7 @@
 }
 
 .botao-primario,
+.botao-secundario,
 .botao-remover {
   padding: 10px;
   font-size: 15px;
@@ -176,6 +177,12 @@
 .botao-primario:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.botao-secundario {
+  color: var(--cor-button-secundario);
+  background: none;
+  border: 1px solid var(--cor-button-secundario);
 }
 
 .botao-remover {

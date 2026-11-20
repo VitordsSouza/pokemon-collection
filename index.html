@@ -34,7 +34,7 @@
         <div>
           <p class="label">Valor total da coleção</p>
           <h3 class="valor-total-colecao">0</h3>
-          <p class="delta">▲ +5,2% em relação ao mês passado</p>
+          <p class="delta"></p>
         </div>
         <ul>
           <li>
@@ -43,15 +43,27 @@
           </li>
           <li>
             <p>Cartas únicas</p>
-            <p>129</p>
+            <p class="cartas-unicas">0</p>
+          </li>
+          <li>
+            <p>Valor médio por carta única</p>
+            <p class="media-por-carta">—</p>
+          </li>
+          <li>
+            <p>Valor médio por unidade</p>
+            <p class="media-por-unidade">—</p>
           </li>
           <li>
             <p>Coleções</p>
-            <p>12</p>
+            <p class="total-colecoes">0</p>
           </li>
           <li>
             <p>Cartas desejadas</p>
-            <p>23</p>
+            <p class="cartas-desejadas">0</p>
+          </li>
+          <li class="linha-sem-cotacao" hidden>
+            <p>Cartas sem cotação</p>
+            <p class="cartas-sem-cotacao">0</p>
           </li>
         </ul>
       </div>
@@ -60,52 +72,30 @@
     <section class="secao-colecoes">
       <div class="div-colecoes">
         <h3>Coleções</h3>
-        <div class="row-colecao">
-          <p>151</p>
-          <div class="progress-bar-colecao">
-            <div class="progress-bar-colecao-fill" id="c-151"></div>
-            <span>123/180</span>
-          </div>
-        </div>
-
-        <div class="row-colecao">
-          <p>Fogo fantasmagórico</p>
-          <div class="progress-bar-colecao">
-            <div
-              class="progress-bar-colecao-fill"
-              id="c-fogo-fantasmagorico"
-            ></div>
-            <span>71/94</span>
-          </div>
-        </div>
-
-        <div class="row-colecao">
-          <p>Caos ascendente</p>
-          <div class="progress-bar-colecao">
-            <div class="progress-bar-colecao-fill" id="c-caos-ascendente"></div>
-            <span>23/87</span>
-          </div>
-        </div>
+        <p class="status-colecoes"></p>
       </div>
     </section>
 
     <section class="secao-minha-colecao">
       <h3>Minha Coleção</h3>
       <div class="inputs-minha-colecao">
-        <input type="text" placeholder="Buscar carta na coleção..." />
-        <select name="" id="">
+        <input
+          type="text"
+          class="filtro-texto"
+          placeholder="Buscar carta na coleção..."
+          aria-label="Buscar carta na coleção"
+        />
+        <select class="filtro-colecao" aria-label="Filtrar por coleção">
           <option value="" selected>Todas as coleções</option>
-          <option value="">151</option>
-          <option value="">Caos ascendente</option>
-          <option value="">Fogo fantasmagórico</option>
         </select>
-        <select name="" id="">
+        <select class="filtro-ordem" aria-label="Ordenar cartas">
           <option value="">Ordenar</option>
-          <option value="">Valor</option>
-          <option value="">Mais recente</option>
+          <option value="valor">Valor</option>
+          <option value="recente">Mais recente</option>
         </select>
       </div>
 
+      <p class="status-colecao"></p>
       <div class="grid-minha-colecao"></div>
     </section>
 

@@ -49,15 +49,11 @@
   border-radius: 4px;
 }
 
-/*Coleções por ID para preencher a barra de progresso da coleção*/
-#c-151 {
-  width: 75%;
+.status-colecoes {
+  color: var(--texto-cinza);
+  font-size: 13px;
 }
 
-#c-fogo-fantasmagorico {
-  width: 90%;
-}
-
-#c-caos-ascendente {
-  width: 24%;
+.status-colecoes:empty {
+  display: none;
 }

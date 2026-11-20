@@ -67,3 +67,11 @@
   border-bottom: 1px solid var(--cor-borda);
   line-height: 24px;
 }
+
+.resumo-colecao .delta.negativa {
+  color: var(--texto-vermelho);
+}
+
+.resumo-colecao ul li[hidden] {
+  display: none;
+}

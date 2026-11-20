@@ -32,7 +32,14 @@ export function extrairCotacao(entrada) {
   if (cm && tipo !== "firstEdition") {
     const sufixo = tipo === "reverse" ? "-holo" : "";
     const valor = positivo(cm[`trend${sufixo}`]) ?? positivo(cm[`avg30${sufixo}`]);
-    if (valor) cardmarket = { valor, menor: positivo(cm[`low${sufixo}`]), atualizado: cm.updated ?? null };
+    if (valor) {
+      cardmarket = {
+        valor,
+        menor: positivo(cm[`low${sufixo}`]),
+        media30: positivo(cm[`avg30${sufixo}`]), // usada na variação de 30 dias do Resumo
+        atualizado: cm.updated ?? null,
+      };
+    }
   }
 
   let tcgplayer = null;
@@ -44,6 +51,37 @@ export function extrairCotacao(entrada) {
   if (valorTp) tcgplayer = { valor: valorTp, menor: positivo(subtipo.lowPrice), atualizado: tp.updated ?? null };
 
   return { cardmarket, tcgplayer };
+}
+
+// Indicadores do Resumo. Cada item traz `valor` (referência por unidade em BRL, ou null),
+// `quantidade`, `desejada` e, nas cartas reais, `cotacao` (ver comPreco em main.js).
+export function resumirColecao(itens) {
+  const soma = (lista, parcela) => lista.reduce((total, item) => total + parcela(item), 0);
+  const possuidas = itens.filter((item) => !item.desejada);
+  const cotadas = possuidas.filter((item) => item.valor != null);
+
+  const valorTotal = soma(cotadas, (item) => item.valor * item.quantidade);
+  const unidadesCotadas = soma(cotadas, (item) => item.quantidade);
+
+  // Variação: tendência atual do Cardmarket contra a média de 30 dias, só nas cartas que têm os dois.
+  // Os dois lados estão em euro, então o câmbio não interfere.
+  const comMedia = possuidas
+    .map((item) => ({ item, cm: item.cotacao?.preco?.fontes.find((fonte) => fonte.nome === "Cardmarket") }))
+    .filter(({ cm }) => cm?.media30);
+  const atual = soma(comMedia, ({ item, cm }) => cm.valor * item.quantidade);
+  const media = soma(comMedia, ({ item, cm }) => cm.media30 * item.quantidade);
+
+  return {
+    valorTotal: centavos(valorTotal),
+    totalCartas: soma(possuidas, (item) => item.quantidade),
+    unicas: possuidas.length,
+    colecoes: new Set(possuidas.map((item) => item.setId ?? item.setNome)).size,
+    desejadas: itens.length - possuidas.length,
+    semCotacao: possuidas.length - cotadas.length,
+    mediaPorCarta: cotadas.length ? centavos(soma(cotadas, (item) => item.valor) / cotadas.length) : null,
+    mediaPorUnidade: unidadesCotadas ? centavos(valorTotal / unidadesCotadas) : null,
+    variacao30: media ? atual / media - 1 : null,
+  };
 }
 
 // cambio: { EUR, USD } em reais. Retorna null quando nenhuma fonte tem preço.

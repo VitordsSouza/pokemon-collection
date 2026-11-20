@@ -1,15 +1,25 @@
 import { buscarCambio, buscarCotacao, carregarVariantes, pesquisarCartas } from "./api.js";
-import { adicionar, alterarQuantidade, obterItens, remover } from "./colecao.js";
+import {
+  adicionar,
+  alterarQuantidade,
+  desejar,
+  filtrarColecao,
+  obterItens,
+  progressoPorColecao,
+  remover,
+} from "./colecao.js";
 import {
   fecharModal,
   mostrarStatusPesquisa,
+  renderizarColecoes,
+  renderizarFiltroColecoes,
   renderizarGrade,
   renderizarModalBusca,
   renderizarModalColecao,
   renderizarResultados,
   renderizarResumo,
 } from "./ui.js";
-import { calcularPreco } from "./precos.js";
+import { calcularPreco, resumirColecao } from "./precos.js";
 
 // ---------- Preços ----------
 
@@ -42,11 +52,23 @@ function comPreco(item) {
   return { ...item, valor: cotacao.preco?.referencia ?? null, cotacao };
 }
 
+const filtroTexto = document.querySelector(".filtro-texto");
+const filtroColecao = document.querySelector(".filtro-colecao");
+const filtroOrdem = document.querySelector(".filtro-ordem");
+
 function atualizarColecao() {
   const itens = obterItens().map(comPreco);
-  renderizarGrade(itens);
-  renderizarResumo(itens);
+  renderizarResumo(resumirColecao(itens));
+  renderizarColecoes(progressoPorColecao(itens));
+  renderizarFiltroColecoes([...new Set(itens.map((item) => item.setNome))].sort((a, b) => a.localeCompare(b)));
+
+  const filtros = { texto: filtroTexto.value, colecao: filtroColecao.value, ordem: filtroOrdem.value };
+  renderizarGrade(filtrarColecao(itens, filtros), itens.length);
 }
+
+filtroTexto.addEventListener("input", atualizarColecao);
+filtroColecao.addEventListener("change", atualizarColecao);
+filtroOrdem.addEventListener("change", atualizarColecao);
 
 // Vários preços chegam juntos: redesenha uma vez por quadro, não uma vez por carta.
 let desenhoAgendado = false;
@@ -162,29 +184,30 @@ function abrirCartaDaColecao(id) {
   desenharModal();
 }
 
-function adicionarCartaDoModal() {
+function itemDoModalDeBusca() {
   const { carta, variantes } = modal;
   const variante = variantes.find((opcao) => opcao.chave === modal.variante);
-  const id = `${carta.id}:${variante.chave}`;
+  return {
+    id: `${carta.id}:${variante.chave}`,
+    cardId: carta.id,
+    variante: variante.chave,
+    varianteNome: variante.nome,
+    nome: carta.nome,
+    setId: carta.setId,
+    setNome: carta.setNome,
+    totalSet: carta.totalSet,
+    numero: carta.numero,
+    raridade: carta.raridade,
+    imagem: carta.imagem,
+    idioma: carta.idioma,
+  };
+}
 
-  adicionar(
-    {
-      id,
-      cardId: carta.id,
-      variante: variante.chave,
-      varianteNome: variante.nome,
-      nome: carta.nome,
-      setId: carta.setId,
-      setNome: carta.setNome,
-      numero: carta.numero,
-      raridade: carta.raridade,
-      imagem: carta.imagem,
-      idioma: carta.idioma,
-    },
-    modal.quantidade,
-  );
+function adicionarCartaDoModal() {
+  const novo = itemDoModalDeBusca();
+  adicionar(novo, modal.quantidade);
 
-  const total = obterItens().find((item) => item.id === id).quantidade;
+  const total = obterItens().find((item) => item.id === novo.id).quantidade;
   modal.mensagem = `Adicionada! Você tem ${total} ${total === 1 ? "cópia" : "cópias"} desta versão.`;
   modal.quantidade = 1;
   cotarColecao();
@@ -204,6 +227,16 @@ const acoesModal = {
   menos: () => mudarQuantidade(-1),
   mais: () => mudarQuantidade(1),
   adicionar: adicionarCartaDoModal,
+  desejar() {
+    modal.mensagem = desejar(itemDoModalDeBusca())
+      ? "Adicionada à lista de desejos."
+      : "Esta versão já está na sua coleção ou na lista de desejos.";
+    cotarColecao();
+  },
+  possuir() {
+    adicionar(modal.item, 1);
+    modal.mensagem = "Agora ela conta na sua coleção.";
+  },
   remover() {
     // Primeiro clique só pede confirmação.
     if (!modal.confirmandoRemocao) {

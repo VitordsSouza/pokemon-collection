@@ -77,7 +77,7 @@ export async function carregarVariantes(cardId) {
 
 // Cotação da variante na moeda de cada mercado, guardada por 24 h.
 export async function buscarCotacao(cardId, chave) {
-  const chaveCache = `cotacao:${cardId}:${chave}`;
+  const chaveCache = `cotacao.v2:${cardId}:${chave}`; // v2: inclui a média de 30 dias
   const salvo = lerCache(chaveCache);
   if (estaValido(salvo, VALIDADE_COTACAO_MS)) return salvo.valor;
 
@@ -230,6 +230,7 @@ function montarCarta({ resumo, set }, detalhe) {
     numero: /^\d+$/.test(resumo.localId) && total ? `${resumo.localId}/${total}` : resumo.localId,
     setId: set?.id ?? null,
     setNome: set?.name ?? "Coleção desconhecida",
+    totalSet: total ?? null,
     imagem: resumo.image ?? null, // URL base; o tamanho é escolhido na exibição
     idioma: resumo.idioma, // "pt" ou "en": de onde vieram nome, raridade e variantes
     raridade: detalhe?.rarity && detalhe.rarity !== "None" ? detalhe.rarity : null, // a API usa "None" como texto

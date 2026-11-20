@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { extrairCotacao, calcularPreco } from "../scripts/precos.js";
+import { extrairCotacao, calcularPreco, resumirColecao } from "../scripts/precos.js";
 
 // Recorte real da TCGdex (sv03.5-025, Pikachu da coleção 151).
 const pricingPikachu = {
@@ -14,7 +14,7 @@ const pricingPikachu = {
 
 test("versão comum usa os campos comuns de cada mercado", () => {
   const cotacao = extrairCotacao({ tipo: "normal", pricing: pricingPikachu });
-  assert.deepEqual(cotacao.cardmarket, { valor: 0.16, menor: 0.02, atualizado: "2026-11-19" });
+  assert.deepEqual(cotacao.cardmarket, { valor: 0.16, menor: 0.02, media30: 0.15, atualizado: "2026-11-19" });
   assert.deepEqual(cotacao.tcgplayer, { valor: 0.28, menor: 0.05, atualizado: "2026-11-19" });
 });
 
@@ -77,4 +77,32 @@ test("com uma só fonte, a referência é ela mesma", () => {
   const preco = calcularPreco({ cardmarket: null, tcgplayer: { valor: 10, menor: 8 } }, { EUR: 6, USD: 5 });
   assert.equal(preco.referencia, 50);
   assert.equal(preco.fontes.length, 1);
+});
+
+test("resumirColecao separa média por carta e por unidade, e ignora desejadas e sem cotação", () => {
+  const cm = (valor, media30) => ({ preco: { fontes: [{ nome: "Cardmarket", valor, media30 }] } });
+  const resumo = resumirColecao([
+    { valor: 100, quantidade: 1, setId: "a", cotacao: cm(10, 8) },
+    { valor: 10, quantidade: 4, setId: "a", cotacao: cm(1, 1) },
+    { valor: null, quantidade: 2, setId: "b" }, // sem cotação: conta nas cartas, não no valor
+    { valor: 999, quantidade: 0, setId: "c", desejada: true },
+  ]);
+
+  assert.equal(resumo.valorTotal, 140); // 100×1 + 10×4
+  assert.equal(resumo.totalCartas, 7);
+  assert.equal(resumo.unicas, 3);
+  assert.equal(resumo.colecoes, 2);
+  assert.equal(resumo.desejadas, 1);
+  assert.equal(resumo.semCotacao, 1);
+  assert.equal(resumo.mediaPorCarta, 55); // (100 + 10) / 2 cartas cotadas
+  assert.equal(resumo.mediaPorUnidade, 28); // 140 / 5 unidades cotadas
+  assert.equal(resumo.variacao30.toFixed(4), (14 / 12 - 1).toFixed(4)); // (10 + 4) / (8 + 4)
+});
+
+test("resumirColecao vazia não divide por zero", () => {
+  const resumo = resumirColecao([]);
+  assert.equal(resumo.valorTotal, 0);
+  assert.equal(resumo.mediaPorCarta, null);
+  assert.equal(resumo.mediaPorUnidade, null);
+  assert.equal(resumo.variacao30, null);
 });

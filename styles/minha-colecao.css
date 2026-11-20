@@ -167,3 +167,23 @@
   background-color: var(--cor-button-primario);
   transition: background-color 0.3s;
 }
+
+.status-colecao {
+  color: var(--texto-cinza);
+  font-size: 13px;
+}
+
+.status-colecao:empty {
+  display: none;
+}
+
+/* Lista de desejos: selo no lugar da quantidade e imagem esmaecida */
+.quantidade-carta.selo-desejada {
+  width: auto;
+  padding: 3px 6px;
+  color: var(--cor-button-secundario);
+}
+
+.carta-desejada img {
+  opacity: 0.55;
+}
