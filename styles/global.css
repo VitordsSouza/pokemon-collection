@@ -1,5 +1,5 @@
 :root {
-  --cor-bg-primario: #12131c;
+  --cor-bg-primario: rgb(18, 19, 28);
   --cor-bg-secundario: #1a1c29;
 
   --cor-button-primario: #685cc4;
@@ -28,5 +28,4 @@ body {
   font-family: "Roboto";
   background-color: var(--cor-bg-primario);
   color: var(--texto-branco);
-  height: 2000px;
 }

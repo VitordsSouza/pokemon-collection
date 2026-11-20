@@ -1,0 +1,34 @@
+export const minhaColecao = [
+  {
+    nome: "Decidueye Exe",
+    valor: 423,
+    quantidade: 4,
+    colecao: "151",
+    imagem: "img/cartas/decidueye-ex.jpg",
+    numeracao: "128/150",
+  },
+  {
+    nome: "Houndstone",
+    valor: 58,
+    quantidade: 1,
+    colecao: "Equilíbrio perfeito",
+    imagem: "img/cartas/houndstone.jpg",
+    numeracao: "15/97",
+  },
+  {
+    nome: "Shedinja",
+    valor: 12.42,
+    quantidade: 3,
+    colecao: "Caos ascendente",
+    imagem: "img/cartas/shedinja.jpg",
+    numeracao: "101/142",
+  },
+  {
+    nome: "Mega Skarmory Exe",
+    valor: 21.67,
+    quantidade: 2,
+    colecao: "Abismo da escuridão",
+    imagem: "img/cartas/mega-skarmory-ex.jpg",
+    numeracao: "201/205",
+  },
+];

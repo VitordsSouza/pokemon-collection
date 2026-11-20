@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pokemon Collection</title>
     <link rel="stylesheet" href="styles/styles.css" />
-    <script src="scripts/script.js"></script>
   </head>
   <body>
     <header>
@@ -24,13 +23,13 @@
         <h2>Resumo da Coleção</h2>
         <div>
           <p class="label">Valor total da coleção</p>
-          <h3 class="value">R$ 8.475,00</h3>
+          <h3 class="valor-total-colecao">0</h3>
           <p class="delta">▲ +5,2% em relação ao mês passado</p>
         </div>
         <ul>
           <li>
             <p>Total de cartas</p>
-            <p>324</p>
+            <p class="total-cartas">0</p>
           </li>
           <li>
             <p>Cartas únicas</p>
@@ -97,47 +96,9 @@
         </select>
       </div>
 
-      <div class="grid-minha-colecao">
-        <div class="div-carta">
-          <img src="img/cartas/decidueye ex.jpg" alt="" />
-          <h4>Decidueye ex</h4>
-          <p>151</p>
-          <div>
-            <p>R$ 432,00</p>
-            <span>013/82</span>
-          </div>
-        </div>
-
-        <div class="div-carta">
-          <img src="img/cartas/houndstone.jpg" alt="" />
-          <h4>Houndstone</h4>
-          <p>Equilíbrio perfeito</p>
-          <div>
-            <p>R$ 58,00</p>
-            <span>05/72</span>
-          </div>
-        </div>
-
-        <div class="div-carta">
-          <img src="img/cartas/shedinja.jpg" alt="" />
-          <h4>Shedinja</h4>
-          <p>Caos ascendente</p>
-          <div>
-            <p>R$ 12,42</p>
-            <span>123/191</span>
-          </div>
-        </div>
-
-        <div class="div-carta">
-          <img src="img/cartas/mega-skarmory-ex.jpg" alt="" />
-          <h4>Mega Skarmory Ex</h4>
-          <p>Abismo da escuridão</p>
-          <div>
-            <p>R$ 21,67</p>
-            <span>087/103</span>
-          </div>
-        </div>
-      </div>
+      <div class="grid-minha-colecao"></div>
     </section>
+
+    <script type="module" src="scripts/main.js"></script>
   </body>
 </html>

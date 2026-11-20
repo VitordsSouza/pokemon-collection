@@ -1,5 +1,5 @@
 .secao-minha-colecao {
-  padding: 16px 24px 0 24px;
+  padding: 16px 24px 24px 24px;
 
   display: flex;
   flex-direction: column;
@@ -109,15 +109,3 @@
   font-size: 11px;
 }
 
-.quantidade-carta span {
-  text-align: center;
-  padding: 3px 0px;
-  border-radius: 4px;
-  width: 30px;
-  font-size: 10px;
-  background-color: var(--cor-bg-primario);
-
-  position: absolute;
-  right: 50px;
-  bottom: 102px;
-}
