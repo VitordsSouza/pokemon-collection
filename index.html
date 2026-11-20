@@ -22,82 +22,88 @@
       <button>Buscar</button>
     </section>
 
-    <section class="secao-resultados-pesquisa" hidden>
-      <h3>Resultados da busca</h3>
-      <p class="status-pesquisa" role="status"></p>
-      <div class="grid-minha-colecao grid-resultados"></div>
-    </section>
+    <div class="layout">
+      <div class="coluna-lateral">
+        <section class="resumo-colecao-secao">
+          <div class="resumo-colecao">
+            <h2>Resumo da Coleção</h2>
+            <div>
+              <p class="label">Valor total da coleção</p>
+              <h3 class="valor-total-colecao">0</h3>
+              <p class="delta"></p>
+            </div>
+            <ul>
+              <li>
+                <p>Total de cartas</p>
+                <p class="total-cartas">0</p>
+              </li>
+              <li>
+                <p>Cartas únicas</p>
+                <p class="cartas-unicas">0</p>
+              </li>
+              <li>
+                <p>Valor médio por carta única</p>
+                <p class="media-por-carta">—</p>
+              </li>
+              <li>
+                <p>Valor médio por unidade</p>
+                <p class="media-por-unidade">—</p>
+              </li>
+              <li>
+                <p>Coleções</p>
+                <p class="total-colecoes">0</p>
+              </li>
+              <li>
+                <p>Cartas desejadas</p>
+                <p class="cartas-desejadas">0</p>
+              </li>
+              <li class="linha-sem-cotacao" hidden>
+                <p>Cartas sem cotação</p>
+                <p class="cartas-sem-cotacao">0</p>
+              </li>
+            </ul>
+          </div>
+        </section>
 
-    <section class="resumo-colecao-secao">
-      <div class="resumo-colecao">
-        <h2>Resumo da Coleção</h2>
-        <div>
-          <p class="label">Valor total da coleção</p>
-          <h3 class="valor-total-colecao">0</h3>
-          <p class="delta"></p>
-        </div>
-        <ul>
-          <li>
-            <p>Total de cartas</p>
-            <p class="total-cartas">0</p>
-          </li>
-          <li>
-            <p>Cartas únicas</p>
-            <p class="cartas-unicas">0</p>
-          </li>
-          <li>
-            <p>Valor médio por carta única</p>
-            <p class="media-por-carta">—</p>
-          </li>
-          <li>
-            <p>Valor médio por unidade</p>
-            <p class="media-por-unidade">—</p>
-          </li>
-          <li>
-            <p>Coleções</p>
-            <p class="total-colecoes">0</p>
-          </li>
-          <li>
-            <p>Cartas desejadas</p>
-            <p class="cartas-desejadas">0</p>
-          </li>
-          <li class="linha-sem-cotacao" hidden>
-            <p>Cartas sem cotação</p>
-            <p class="cartas-sem-cotacao">0</p>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="secao-colecoes">
-      <div class="div-colecoes">
-        <h3>Coleções</h3>
-        <p class="status-colecoes"></p>
-      </div>
-    </section>
-
-    <section class="secao-minha-colecao">
-      <h3>Minha Coleção</h3>
-      <div class="inputs-minha-colecao">
-        <input
-          type="text"
-          class="filtro-texto"
-          placeholder="Buscar carta na coleção..."
-          aria-label="Buscar carta na coleção"
-        />
-        <select class="filtro-colecao" aria-label="Filtrar por coleção">
-          <option value="" selected>Todas as coleções</option>
-        </select>
-        <select class="filtro-ordem" aria-label="Ordenar cartas">
-          <option value="">Ordenar</option>
-          <option value="valor">Valor</option>
-          <option value="recente">Mais recente</option>
-        </select>
+        <section class="secao-colecoes">
+          <div class="div-colecoes">
+            <h3>Coleções</h3>
+            <p class="status-colecoes"></p>
+          </div>
+        </section>
       </div>
 
-      <p class="status-colecao"></p>
-      <div class="grid-minha-colecao"></div>
-    </section>
+      <div class="coluna-principal">
+        <section class="secao-resultados-pesquisa" hidden>
+          <h3>Resultados da busca</h3>
+          <p class="status-pesquisa" role="status"></p>
+          <div class="grid-minha-colecao grid-resultados"></div>
+        </section>
+
+        <section class="secao-minha-colecao">
+          <h3>Minha Coleção</h3>
+          <div class="inputs-minha-colecao">
+            <input
+              type="text"
+              class="filtro-texto"
+              placeholder="Buscar carta na coleção..."
+              aria-label="Buscar carta na coleção"
+            />
+            <select class="filtro-colecao" aria-label="Filtrar por coleção">
+              <option value="" selected>Todas as coleções</option>
+            </select>
+            <select class="filtro-ordem" aria-label="Ordenar cartas">
+              <option value="">Ordenar</option>
+              <option value="valor">Valor</option>
+              <option value="recente">Mais recente</option>
+            </select>
+          </div>
+
+          <p class="status-colecao"></p>
+          <div class="grid-minha-colecao"></div>
+        </section>
+      </div>
+    </div>
 
     <dialog class="modal-carta" aria-label="Detalhes da carta"></dialog>
 

@@ -1,0 +1,79 @@
+/* Distribuição das seções na página.
+   Celular: uma coluna, na ordem busca → resultados → resumo → coleções → minha coleção.
+   Computador: resumo e coleções numa coluna lateral; resultados e minha coleção ao lado. */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* No celular as colunas "somem" e as seções seguem uma única fila */
+.coluna-lateral,
+.coluna-principal {
+  display: contents;
+}
+
+.layout .secao-resultados-pesquisa {
+  order: -1;
+}
+
+/* ---------- Tablet: grades com 3 colunas ---------- */
+
+@media (min-width: 640px) {
+  .grid-minha-colecao {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .div-carta img,
+  .div-carta .carta-sem-imagem {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* ---------- Computador: duas colunas e grades com 4 colunas ---------- */
+
+@media (min-width: 1024px) {
+  .secao-de-pesquisa,
+  .layout {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    align-items: start;
+    gap: 20px;
+    padding: 0 20px 24px 20px;
+  }
+
+  .coluna-lateral,
+  .coluna-principal {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* O espaçamento passa a vir do .layout e das colunas */
+  .layout section {
+    padding: 0;
+  }
+
+  .grid-minha-colecao {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .inputs-minha-colecao {
+    flex-direction: row;
+  }
+
+  .inputs-minha-colecao input {
+    flex: 2;
+  }
+
+  .inputs-minha-colecao select {
+    flex: 1;
+  }
+}

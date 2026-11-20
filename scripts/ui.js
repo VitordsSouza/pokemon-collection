@@ -1,10 +1,4 @@
-const formatadores = Object.fromEntries(
-  ["BRL", "EUR", "USD"].map((moeda) => [
-    moeda,
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: moeda }),
-  ]),
-);
-const moedaBRL = formatadores.BRL;
+const moedaBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 function formatarData(texto) {
   const data = new Date(texto);
@@ -188,14 +182,12 @@ const modal = document.querySelector(".modal-carta");
 
 function cabecalhoModalHTML(carta, ...detalhes) {
   return `
-    <button class="modal-fechar" data-acao="fechar" aria-label="Fechar">×</button>
-    ${imagemHTML(carta, "high")}
     <h3>${escaparHTML(carta.nome)}</h3>
     <p>${escaparHTML(juntar(carta.setNome, carta.numero))}</p>
     <p>${escaparHTML(juntar(...detalhes, carta.raridade, NOMES_IDIOMAS[carta.idioma]))}</p>`;
 }
 
-// Detalhe do preço: referência, faixa entre as fontes, cada fonte e o câmbio usado.
+// Preço em reais: referência, total pelas cópias e quanto cada fonte indica.
 function precoModalHTML(cotacao, quantidade = 1) {
   if (cotacao.estado === "carregando") return `<p>Consultando preços…</p>`;
   if (cotacao.estado === "erro") return `<p>Cotação indisponível: ${escaparHTML(cotacao.mensagem)}</p>`;
@@ -203,35 +195,22 @@ function precoModalHTML(cotacao, quantidade = 1) {
     return `<p>Sem cotação para esta versão no Cardmarket e no TCGplayer.</p>`;
   }
 
-  const { preco, cambio } = cotacao;
+  const { preco } = cotacao;
   const fontes = preco.fontes
-    .map((fonte) => {
-      const original = formatadores[fonte.moeda];
-      const detalhes = juntar(
-        fonte.menor != null && `menor anúncio ${original.format(fonte.menor)}`,
-        fonte.atualizado && `atualizado em ${formatarData(fonte.atualizado)}`,
-      );
-      return `
-        <li>
-          <span>${fonte.nome}</span>
-          <span>${original.format(fonte.valor)} · ${moedaBRL.format(fonte.valorBRL)}</span>
-          ${detalhes ? `<small>${escaparHTML(detalhes)}</small>` : ""}
-        </li>`;
-    })
+    .map((fonte) => `<li><span>${fonte.nome}</span><span>${moedaBRL.format(fonte.valorBRL)}</span></li>`)
     .join("");
+  const atualizado = preco.fontes.map((fonte) => fonte.atualizado).find(Boolean);
+  const origem = preco.fontes.length > 1 ? "Média do Cardmarket e do TCGplayer" : `Cotação do ${preco.fontes[0].nome}`;
 
   return `
     <div class="modal-valor">
       <p>${moedaBRL.format(preco.referencia)}</p>
-      <span>valor de referência por unidade</span>
+      <span>por unidade</span>
     </div>
     ${quantidade > 1 ? `<p>Total com ${quantidade} cópias: ${moedaBRL.format(preco.referencia * quantidade)}</p>` : ""}
-    ${preco.fontes.length > 1 ? `<p>Varia de ${moedaBRL.format(preco.minimo)} a ${moedaBRL.format(preco.maximo)} entre as fontes.</p>` : ""}
     <ul class="modal-fontes">${fontes}</ul>
     <p class="modal-nota">
-      Preços internacionais convertidos para reais (1 € = ${moedaBRL.format(cambio.EUR)} ·
-      1 US$ = ${moedaBRL.format(cambio.USD)}, ${escaparHTML(cambio.fonte)}, ${escaparHTML(formatarData(cambio.data))}).
-      Não há cotação do mercado brasileiro disponível por API.
+      ${origem}, convertida para reais${atualizado ? ` · ${escaparHTML(formatarData(atualizado))}` : ""}.
     </p>`;
 }
 
@@ -244,8 +223,12 @@ function quantidadeHTML(quantidade) {
     </div>`;
 }
 
-function mostrarModal(html) {
-  modal.innerHTML = html;
+// Imagem e informações lado a lado no computador; empilhadas no celular (ver modal-carta.css).
+function mostrarModal(carta, html) {
+  modal.innerHTML = `
+    <button class="modal-fechar" data-acao="fechar" aria-label="Fechar">×</button>
+    ${imagemHTML(carta, "high")}
+    <div class="modal-info">${html}</div>`;
   if (!modal.open) modal.showModal();
 }
 
@@ -264,7 +247,7 @@ export function renderizarModalBusca({ carta, variantes, variante, quantidade, m
         )
         .join("");
 
-  mostrarModal(`
+  mostrarModal(carta, `
     ${cabecalhoModalHTML(carta)}
     <label class="modal-campo">
       Variante
@@ -285,7 +268,7 @@ export function renderizarModalColecao({ item, confirmandoRemocao, mensagem }) {
     : quantidadeHTML(item.quantidade);
   const textoRemover = item.desejada ? "Remover da lista de desejos" : "Remover da coleção";
 
-  mostrarModal(`
+  mostrarModal(item, `
     ${cabecalhoModalHTML(item, item.varianteNome)}
     ${precoModalHTML(item.cotacao, item.quantidade)}
     ${controlesHTML}

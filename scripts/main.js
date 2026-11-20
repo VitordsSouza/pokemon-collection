@@ -38,7 +38,7 @@ async function cotar(cardId, variante) {
   try {
     const [valores, cotacao] = await Promise.all([obterCambio(), buscarCotacao(cardId, variante)]);
     const preco = calcularPreco(cotacao, valores);
-    return preco ? { estado: "ok", preco, cambio: valores } : { estado: "sem-cotacao" };
+    return preco ? { estado: "ok", preco } : { estado: "sem-cotacao" };
   } catch (erro) {
     console.error(erro);
     return { estado: "erro", mensagem: erro.message };

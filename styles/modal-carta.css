@@ -17,6 +17,13 @@
   gap: 10px;
 }
 
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
 .modal-carta::backdrop {
   background-color: rgba(18, 19, 28, 0.85);
 }
@@ -91,9 +98,7 @@
 
 .modal-fontes li {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 2px 8px;
   padding-bottom: 6px;
 
   font-size: 13px;
@@ -103,11 +108,6 @@
 
 .modal-fontes li span:last-of-type {
   color: var(--texto-branco);
-}
-
-.modal-fontes small {
-  width: 100%;
-  font-size: 11px;
 }
 
 .modal-carta .modal-nota {
@@ -193,4 +193,29 @@
 
 .modal-mensagem:empty {
   display: none;
+}
+
+/* Computador: imagem à esquerda, informações à direita */
+@media (min-width: 768px) {
+  .modal-carta {
+    max-width: 640px;
+    padding: 24px;
+  }
+
+  .modal-carta[open] {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .modal-carta img,
+  .modal-carta .carta-sem-imagem {
+    width: 240px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+
+  .modal-info {
+    flex: 1;
+  }
 }
