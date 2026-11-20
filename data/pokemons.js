@@ -1,5 +1,6 @@
 export const minhaColecao = [
   {
+    id: "mock-decidueye-ex",
     nome: "Decidueye Exe",
     valor: 423,
     quantidade: 4,
@@ -8,6 +9,7 @@ export const minhaColecao = [
     numeracao: "128/150",
   },
   {
+    id: "mock-houndstone",
     nome: "Houndstone",
     valor: 58,
     quantidade: 1,
@@ -16,6 +18,7 @@ export const minhaColecao = [
     numeracao: "15/97",
   },
   {
+    id: "mock-shedinja",
     nome: "Shedinja",
     valor: 12.42,
     quantidade: 3,
@@ -24,6 +27,7 @@ export const minhaColecao = [
     numeracao: "101/142",
   },
   {
+    id: "mock-mega-skarmory-ex",
     nome: "Mega Skarmory Exe",
     valor: 21.67,
     quantidade: 2,

@@ -1,5 +1,5 @@
-import { minhaColecao } from "../data/pokemons.js";
+import { obterItens } from "./colecao.js";
 import { renderizarGrade, renderizarResumo } from "./ui.js";
 
-renderizarGrade(minhaColecao);
-renderizarResumo(minhaColecao);
+renderizarGrade(obterItens());
+renderizarResumo(obterItens());
