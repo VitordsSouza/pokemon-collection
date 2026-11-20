@@ -18,13 +18,12 @@ function escaparHTML(texto) {
   return String(texto).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-// shortcut: caminhos locais existem só no mock (sai na Fase 6); as URLs da API recebem o tamanho.
+// A base guarda a URL sem extensão; o tamanho ("low" ou "high") é escolhido aqui.
 function imagemHTML(carta, tamanho) {
   if (!carta.imagem) {
     return `<div class="carta-sem-imagem"><span>Imagem indisponível</span></div>`;
   }
-  const url = carta.imagem.startsWith("http") ? `${carta.imagem}/${tamanho}.webp` : carta.imagem;
-  return `<img src="${escaparHTML(url)}" alt="${escaparHTML(carta.nome)}" loading="lazy" />`;
+  return `<img src="${escaparHTML(`${carta.imagem}/${tamanho}.webp`)}" alt="${escaparHTML(carta.nome)}" loading="lazy" />`;
 }
 
 const TEXTOS_COTACAO = {
@@ -280,9 +279,6 @@ export function renderizarModalBusca({ carta, variantes, variante, quantidade, m
 
 // Carta já na coleção (ou na lista de desejos): alterar quantidade, marcar como possuída ou remover.
 export function renderizarModalColecao({ item, confirmandoRemocao, mensagem }) {
-  const precoHTML = item.cotacao
-    ? precoModalHTML(item.cotacao, item.quantidade)
-    : `<div class="modal-valor">${valorHTML(item)}<span>por unidade</span></div>`;
   const controlesHTML = item.desejada
     ? `<p>Na sua lista de desejos: não entra no valor nem nas contagens da coleção.</p>
        <button class="botao-primario" data-acao="possuir">Já tenho esta carta</button>`
@@ -291,7 +287,7 @@ export function renderizarModalColecao({ item, confirmandoRemocao, mensagem }) {
 
   mostrarModal(`
     ${cabecalhoModalHTML(item, item.varianteNome)}
-    ${precoHTML}
+    ${precoModalHTML(item.cotacao, item.quantidade)}
     ${controlesHTML}
     <button class="botao-remover" data-acao="remover">
       ${confirmandoRemocao ? "Confirmar remoção" : textoRemover}

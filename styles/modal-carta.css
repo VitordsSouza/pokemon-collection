@@ -77,12 +77,6 @@
   font-size: 16px;
 }
 
-.modal-valor p.sem-cotacao {
-  color: var(--texto-cinza);
-  font-weight: normal;
-  font-size: 13px;
-}
-
 .modal-valor span {
   color: var(--texto-cinza);
   font-size: 11px;

@@ -45,9 +45,7 @@ async function cotar(cardId, variante) {
   }
 }
 
-// shortcut: itens do mock não têm cardId e mantêm o valor fictício até a Fase 6.
 function comPreco(item) {
-  if (!item.cardId) return item;
   const cotacao = cotacoes.get(item.id) ?? { estado: "carregando" };
   return { ...item, valor: cotacao.preco?.referencia ?? null, cotacao };
 }
@@ -91,7 +89,7 @@ async function emParalelo(itens, limite, tarefa) {
 }
 
 async function cotarColecao() {
-  const pendentes = obterItens().filter((item) => item.cardId && !cotacoes.has(item.id));
+  const pendentes = obterItens().filter((item) => !cotacoes.has(item.id));
   for (const item of pendentes) cotacoes.set(item.id, { estado: "carregando" });
 
   // Poucas consultas por vez, para respeitar a base gratuita.

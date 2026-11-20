@@ -1,5 +1,3 @@
-import { minhaColecao as semente } from "../data/pokemons.js";
-
 const CHAVE = "pkm.colecao.v1";
 
 let itens = ler();
@@ -12,12 +10,12 @@ function ler() {
     console.error("localStorage indisponível: a coleção não será salva.", erro);
   }
 
-  // shortcut: coleção vazia começa com o mock; a semente sai na Fase 6.
-  if (bruto === null) return structuredClone(semente);
+  if (bruto === null) return [];
 
   try {
     const dados = JSON.parse(bruto);
-    if (Array.isArray(dados)) return dados;
+    // Descarta as cartas fictícias da fase de protótipo (sem cardId), se ainda estiverem salvas.
+    if (Array.isArray(dados)) return dados.filter((item) => item?.cardId);
   } catch {
     // tratado abaixo
   }

@@ -14,22 +14,35 @@ const abrirColecao = () => import(`../scripts/colecao.js?abertura=${++abertura}`
 
 beforeEach(() => armazenamento.clear());
 
-test("coleção vazia começa com a semente mock", async () => {
+const carta = (id) => ({ id, cardId: id.split(":")[0] });
+
+test("primeira abertura começa com a coleção vazia", async () => {
   const colecao = await abrirColecao();
-  assert.equal(colecao.obterItens().length, 4);
+  assert.deepEqual(colecao.obterItens(), []);
+});
+
+test("cartas fictícias do protótipo (sem cardId) são descartadas ao abrir", async () => {
+  armazenamento.set(
+    "pkm.colecao.v1",
+    JSON.stringify([{ id: "mock-houndstone", quantidade: 1 }, { ...carta("sv03.5-025:normal"), quantidade: 2 }]),
+  );
+  const ids = (await abrirColecao()).obterItens().map((i) => i.id);
+  assert.deepEqual(ids, ["sv03.5-025:normal"]);
 });
 
 test("adicionar, alterar e remover persistem após reabrir", async () => {
   const antes = await abrirColecao();
-  antes.adicionar({ id: "sv08.5-013:holo", nome: "Flareon" }, 2);
-  antes.alterarQuantidade("mock-houndstone", 5);
-  antes.remover("mock-shedinja");
+  antes.adicionar(carta("sv08.5-013:holo"), 2);
+  antes.adicionar(carta("sv03.5-025:normal"));
+  antes.adicionar(carta("base1-4:holo"));
+  antes.alterarQuantidade("sv03.5-025:normal", 5);
+  antes.remover("base1-4:holo");
 
   const depois = (await abrirColecao()).obterItens();
-  assert.equal(depois.length, 4);
+  assert.equal(depois.length, 2);
   assert.equal(depois.find((i) => i.id === "sv08.5-013:holo").quantidade, 2);
-  assert.equal(depois.find((i) => i.id === "mock-houndstone").quantidade, 5);
-  assert.equal(depois.find((i) => i.id === "mock-shedinja"), undefined);
+  assert.equal(depois.find((i) => i.id === "sv03.5-025:normal").quantidade, 5);
+  assert.equal(depois.find((i) => i.id === "base1-4:holo"), undefined);
 });
 
 test("adicionar carta repetida soma a quantidade", async () => {
@@ -42,7 +55,8 @@ test("adicionar carta repetida soma a quantidade", async () => {
 
 test("quantidade inválida é rejeitada", async () => {
   const colecao = await abrirColecao();
-  assert.throws(() => colecao.alterarQuantidade("mock-houndstone", 0), RangeError);
+  colecao.adicionar(carta("a-1:normal"));
+  assert.throws(() => colecao.alterarQuantidade("a-1:normal", 0), RangeError);
   assert.throws(() => colecao.adicionar({ id: "y" }, 1.5), RangeError);
   assert.throws(() => colecao.alterarQuantidade("nao-existe", 1));
 });
@@ -69,12 +83,13 @@ test("falha ao salvar é avisada a quem chamou", async () => {
 
 test("lista de desejos: não duplica e vira carta possuída ao adicionar", async () => {
   const colecao = await abrirColecao();
-  assert.equal(colecao.desejar({ id: "w" }), true);
-  assert.equal(colecao.desejar({ id: "w" }), false);
-  assert.equal(colecao.desejar({ id: "mock-houndstone" }), false); // já possuída
+  assert.equal(colecao.desejar(carta("w-1:holo")), true);
+  assert.equal(colecao.desejar(carta("w-1:holo")), false);
+  colecao.adicionar(carta("a-1:normal"));
+  assert.equal(colecao.desejar(carta("a-1:normal")), false); // já possuída
 
-  colecao.adicionar({ id: "w" }, 2);
-  const item = (await abrirColecao()).obterItens().find((i) => i.id === "w");
+  colecao.adicionar(carta("w-1:holo"), 2);
+  const item = (await abrirColecao()).obterItens().find((i) => i.id === "w-1:holo");
   assert.equal(item.desejada, false);
   assert.equal(item.quantidade, 2);
 });
